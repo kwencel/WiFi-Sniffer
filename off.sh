@@ -1,5 +1,6 @@
-INF=wlp2s0
-ifconfig $INF down
-iwconfig $INF mode managed
-ifconfig $INF up
-systemctl restart NetworkManager.service
+if [ ! -z "$1" ]; then
+    ifconfig $1 down
+    iwconfig $1 mode managed
+    ifconfig $1 up
+    service NetworkManager start
+fi

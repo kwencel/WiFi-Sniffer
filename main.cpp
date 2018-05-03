@@ -1,110 +1,61 @@
 #include <iostream>
 #include <pcap.h>
 
-#include <linux/if_ether.h>
-#include <x86emu.h>
-#include <bitset>
-//#include "ieee80211.h"
+#include <csignal>
+#include <thread>
+#include "ErrorCheckUtils.h"
+#include "Define.h"
+#include "TrafficAnalyzer.h"
 
 
-char* errbuf;
+char errorBuffer[PCAP_ERRBUF_SIZE];
 pcap_t* handle;
-int ip,arp,tcp,udp,others;
-using namespace std;
+TrafficAnalyzer analyzer;
 
-const int RADIOTAP_HDR_SIZE = 56;
-
-struct ieee80211_hdr {
-    __le16 frame_control;
-    __le16 duration_id;
-    u8 addr1[ETH_ALEN];
-    u8 addr2[ETH_ALEN];
-    u8 addr3[ETH_ALEN];
-    __le16 seq_ctrl;
-    u8 addr4[ETH_ALEN];
-} ;
-
-void printMAC(u8 address[], string name){
-    cout<<name<<" : ";
-    for(int i=0;i<6;i++){
-        printf("%02X:",address[i]);
-    }
-    cout<<endl;
+void trap(u_char* user, const struct pcap_pkthdr* h, const u_char* bytes) {
+    auto* frameHead = (ieee80211_hdr*) (bytes + RADIOTAP_HDR_SIZE);
+    char* payload = (char*) bytes + sizeof(ieee80211_hdr) + RADIOTAP_HDR_SIZE;
+    analyzer.add(frameHead);
 }
 
-
-void trap(u_char *user, const struct pcap_pkthdr *h, const u_char *bytes) {
-
-    u8 destinationAddress[ETH_ALEN];
-    u8 sourceAddress[ETH_ALEN];
-    u8 accessPointAddress[ETH_ALEN];
-    u8 destinationAccessPointAddress[ETH_ALEN];
-    u8 sourceAccessPointAddress[ETH_ALEN];
-    struct ieee80211_hdr *fhead = (struct ieee80211_hdr *) (bytes + RADIOTAP_HDR_SIZE);
-    char *payload = (char*) bytes + sizeof(struct ieee80211_hdr) + RADIOTAP_HDR_SIZE;
-    bool toDS = (fhead->frame_control & ( 1 << 8 )) >> 8;
-    bool fromDS = (fhead->frame_control & ( 1 << 9 )) >> 9;
-    if(!toDS){
-        copy(begin(fhead->addr1),end(fhead->addr1),destinationAddress);
-        if(fromDS){
-            copy(begin(fhead->addr2),end(fhead->addr2),accessPointAddress);
-            copy(begin(fhead->addr3),end(fhead->addr3),sourceAddress);
-        }else{
-            copy(begin(fhead->addr3),end(fhead->addr3),accessPointAddress);
-        }
-    }else{
-        copy(begin(fhead->addr3),end(fhead->addr3),destinationAddress);
-        if(fromDS){
-            copy(begin(fhead->addr4),end(fhead->addr4),accessPointAddress);
-            copy(begin(fhead->addr2),end(fhead->addr2),sourceAccessPointAddress);
-            copy(begin(fhead->addr1),end(fhead->addr1),destinationAccessPointAddress);
-        }else{
-            copy(begin(fhead->addr1),end(fhead->addr1),accessPointAddress);
-        }
-    }
-
-    if(!fromDS){
-        copy(begin(fhead->addr2),end(fhead->addr2),sourceAddress);
-    }
-    cout<<"============================"<<endl;
-    cout<<"to DS: "<<toDS<<endl;
-    cout<<"from DS: "<<fromDS<<endl;
-    printMAC(sourceAddress,"SOURCE");
-    printMAC(destinationAddress,"DESTINATION");
-    printMAC(accessPointAddress,"AP");
-    printMAC(destinationAccessPointAddress,"DESTINATION AP");
-    printMAC(sourceAccessPointAddress,"SOURCE AP");
-    cout<<std::bitset<8>(bytes[RADIOTAP_HDR_SIZE])<<endl;
-    cout<<std::bitset<8>(bytes[1+RADIOTAP_HDR_SIZE])<<endl;
-
-//    for(int y = 0; y < sizeof(char) * 8; y++)
-//        printf("%c ", ( bytes[RADIOTAP_HDR_SIZE] & (1 << y) ) ? '1' : '0' );
-//    cout<<endl;
-//    for(int y = 0; y < sizeof(char) * 8; y++)
-//        printf("%c ", ( bytes[1+RADIOTAP_HDR_SIZE] & (1 << y) ) ? '1' : '0' );
-//    cout<<endl;
-
-    for(int i=0;i<sizeof (ieee80211_hdr) ;i++){
-        if(i==4||i==2) cout<<" ";
-        if(i>4&&(i-10)%6==0) cout<<" ";
-        printf("%02X",bytes[i+RADIOTAP_HDR_SIZE]);
-    }
-    std::fill(destinationAddress, destinationAddress+6, 0);
-    std::fill(sourceAddress, sourceAddress+6, 0);
-    std::fill(destinationAccessPointAddress, destinationAccessPointAddress+6, 0);
-    std::fill(sourceAccessPointAddress, sourceAccessPointAddress+6, 0);
-    std::fill(accessPointAddress, accessPointAddress+6, 0);
-    cout<<endl<<"============================";
-    cout<<endl;
+void cleanup(int i) {
+    pcap_close(handle);
 }
-
-
 
 int main(int argc, char** argv) {
-    errbuf = new char[PCAP_ERRBUF_SIZE];
-    handle = pcap_create(argv[1], errbuf);
-    pcap_set_promisc(handle, 1);
-    pcap_set_snaplen(handle, 65535);
-    pcap_activate(handle);
-    pcap_loop(handle, -1, trap, NULL);
+    handle = pcap_create(argv[1], errorBuffer);
+    if (handle == nullptr) {
+        std::cerr << "Error in pcap_create: " << errorBuffer << std::endl;
+        return -1;
+    }
+
+    CHK(pcap_set_promisc(handle, 1));
+    auto canSetMonitorMode = static_cast<bool>(pcap_can_set_rfmon(handle));
+    if (not canSetMonitorMode) {
+        std::cerr << "Monitor mode is not supported on this wireless card. Cannot proceed." << std::endl;
+        return 1;
+    }
+
+    CHK(pcap_set_rfmon(handle, 1));
+    CHK(pcap_set_snaplen(handle, 65535));
+    CHK(pcap_activate(handle));
+
+    signal(SIGINT, cleanup);
+    signal(SIGABRT, cleanup);
+    signal(SIGTERM, cleanup);
+    signal(SIGTSTP, cleanup);
+
+    std::thread([&]() {
+        while (true) {
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            const std::string& stats = analyzer.getStats();
+            if (stats.empty()) {
+                std::cout << "Still gathering data..." << std::endl;
+            } else {
+                std::cout << stats << "==================================================================" << std::endl;
+            }
+        }
+    }).detach();
+
+    pcap_loop(handle, -1, trap, nullptr);
 }

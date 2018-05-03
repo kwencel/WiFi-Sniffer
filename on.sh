@@ -1,5 +1,6 @@
-INF=wlp2s0
-systemctl stop NetworkManager.service
-ifconfig $INF down
-iwconfig $INF mode monitor
-ifconfig $INF up
+if [ ! -z "$1" ]; then
+    service NetworkManager stop
+    ifconfig $1 down
+    iwconfig $1 mode monitor
+    ifconfig $1 up
+fi
