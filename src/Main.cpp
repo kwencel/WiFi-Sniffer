@@ -13,8 +13,9 @@ pcap_t* handle;
 TrafficAnalyzer analyzer;
 
 void trap(u_char* user, const struct pcap_pkthdr* h, const u_char* bytes) {
-    auto* frameHead = (ieee80211_hdr*) (bytes + RADIOTAP_HDR_SIZE);
-    char* payload = (char*) bytes + sizeof(ieee80211_hdr) + RADIOTAP_HDR_SIZE;
+    __le16 radiotap_hdr_size = bytes[2];
+    auto* frameHead = (ieee80211_hdr*) (bytes + radiotap_hdr_size);
+    char* payload = (char*) bytes + sizeof(ieee80211_hdr) + radiotap_hdr_size;
     analyzer.add(frameHead);
 }
 

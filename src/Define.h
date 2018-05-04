@@ -6,7 +6,6 @@
 #include "Util.h"
 
 #define ETH_ALEN	6
-#define RADIOTAP_HDR_SIZE 56
 
 struct ieee80211_hdr {
     enum FrameType { MANAGEMENT, CONTROL, DATA, RESERVED };
