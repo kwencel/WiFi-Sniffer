@@ -43,6 +43,10 @@ public:
         return packetsCaptures;
     }
 
+    const std::unordered_set<ApMac>& getAccessPoints() const {
+        return route;
+    }
+
     void incrementCaptures() {
         ++packetsCaptures;
     }

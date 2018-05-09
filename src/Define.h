@@ -8,8 +8,6 @@
 #define ETH_ALEN	6
 
 struct ieee80211_hdr {
-    enum FrameType { MANAGEMENT, CONTROL, DATA, RESERVED };
-
     __le16 frameControl;
     __le16 durationId;
     uint8_t addr1[ETH_ALEN];

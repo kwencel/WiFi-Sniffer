@@ -23,9 +23,8 @@ public:
         bool fromDS = header->isFromDistributionSystem();
         if (not toDS) {
             if (not fromDS) {  // 0 0
-                // TODO Does it count as an AP?
                 addToContainer(header->addr2, header->addr1, [&](Communication* c) {             // Source, Destination
-                    c->addAp(header->addr3);                                                     // SSID
+                    c->addAp(header->addr3);                                                     // BSSID
                 });
                 auto [iterator, success] = communications.emplace(header->addr2, header->addr1);
             } else {           // 0 1
@@ -50,16 +49,32 @@ public:
     std::string getStats() {
         std::unordered_set<Communication> localCommunications = getCommunications();
         std::string message;
-        for (auto&& communication : localCommunications) {
+        for (const auto& communication : localCommunications) {
             message.append(communication.getSource() + " -> " + communication.getDestination() + " via APs " +
                            communication.getRoute() + " Count: " + std::to_string(communication.getCapturesCount()) + "\n");
         }
+
+        using Ap = std::string;
+        using Station = std::string;
+        std::map<Ap, std::unordered_set<Station>> apBindings;
+        for (const auto& communication : localCommunications) {
+            for (const auto& ap : communication.getAccessPoints()) {
+                const std::string& accessPoint = ap.toString();
+                apBindings[accessPoint].insert(communication.getSource());
+                apBindings[accessPoint].insert(communication.getDestination());
+            }
+        }
+
+        for (const auto& [ap, stations] : apBindings) {
+            message.append("AP " + ap + " handled communications of " + printContainer(stations) + "\n");
+        }
+
         return message;
     }
 
 private:
 
-    void addToContainer(StationMac source, StationMac destination, const std::function<void (Communication*)>& processor) {
+    void addToContainer(const StationMac& source, const StationMac& destination, const std::function<void (Communication*)>& processor) {
         std::lock_guard<std::mutex> guard(communicationsMutex);
         auto [iterator, success] = communications.emplace(source, destination);
         auto writablePointer = const_cast<Communication*>(&(*iterator));

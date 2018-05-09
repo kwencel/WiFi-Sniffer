@@ -37,7 +37,10 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    CHK(pcap_set_rfmon(handle, 1));
+    /** Enable this to sniff only on the packets addressed to the interface provided as an argument.
+     *  Use "on.sh" to sniff on all packets that reach the provided interface */
+//    CHK(pcap_set_rfmon(handle, 1));
+
     CHK(pcap_set_snaplen(handle, 65535));
     CHK(pcap_activate(handle));
 
@@ -47,13 +50,14 @@ int main(int argc, char** argv) {
     signal(SIGTSTP, cleanup);
 
     std::thread([&]() {
+        std::string line = "========================================================================================\n";
         while (true) {
             std::this_thread::sleep_for(std::chrono::seconds(5));
             const std::string& stats = analyzer.getStats();
             if (stats.empty()) {
                 std::cout << "Still gathering data..." << std::endl;
             } else {
-                std::cout << stats << "==================================================================" << std::endl;
+                std::cout << line << stats << line << std::endl;
             }
         }
     }).detach();
