@@ -54,19 +54,22 @@ public:
                            communication.getRoute() + " Count: " + std::to_string(communication.getCapturesCount()) + "\n");
         }
 
-        using Ap = std::string;
-        using Station = std::string;
-        std::map<Ap, std::unordered_set<Station>> apBindings;
-        for (const auto& communication : localCommunications) {
-            for (const auto& ap : communication.getAccessPoints()) {
-                const std::string& accessPoint = ap.toString();
-                apBindings[accessPoint].insert(communication.getSource());
-                apBindings[accessPoint].insert(communication.getDestination());
+        if (not message.empty()) {
+            message += '\n';
+            using Ap = std::string;
+            using Station = std::string;
+            std::map<Ap, std::unordered_set<Station>> apBindings;
+            for (const auto &communication : localCommunications) {
+                for (const auto &ap : communication.getAccessPoints()) {
+                    const std::string &accessPoint = ap.toString();
+                    apBindings[accessPoint].insert(communication.getSource());
+                    apBindings[accessPoint].insert(communication.getDestination());
+                }
             }
-        }
 
-        for (const auto& [ap, stations] : apBindings) {
-            message.append("AP " + ap + " handled communications of " + printContainer(stations) + "\n");
+            for (const auto& [ap, stations] : apBindings) {
+                message.append("AP " + ap + " handled communications of " + printContainer(stations) + "\n");
+            }
         }
 
         return message;
