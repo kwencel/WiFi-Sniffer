@@ -78,11 +78,13 @@ public:
 private:
 
     void addToContainer(const StationMac& source, const StationMac& destination, const std::function<void (Communication*)>& processor) {
-        std::lock_guard<std::mutex> guard(communicationsMutex);
-        auto [iterator, success] = communications.emplace(source, destination);
-        auto writablePointer = const_cast<Communication*>(&(*iterator));
-        processor(writablePointer);
-        writablePointer->incrementCaptures();
+        if(!destination.isOnBlackList()) {
+            std::lock_guard<std::mutex> guard(communicationsMutex);
+            auto[iterator, success] = communications.emplace(source, destination);
+            auto writablePointer = const_cast<Communication *>(&(*iterator));
+            processor(writablePointer);
+            writablePointer->incrementCaptures();
+        }
     }
 
     std::unordered_set<Communication> getCommunications() {

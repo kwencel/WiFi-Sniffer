@@ -15,8 +15,11 @@ TrafficAnalyzer analyzer;
 void trap(u_char* user, const struct pcap_pkthdr* h, const u_char* bytes) {
     __le16 radiotap_hdr_size = bytes[2];
     auto* frameHead = (ieee80211_hdr*) (bytes + radiotap_hdr_size);
+
     char* payload = (char*) bytes + sizeof(ieee80211_hdr) + radiotap_hdr_size;
-    analyzer.add(frameHead);
+    if(frameHead->getFrameType()==ieee80211_hdr::FrameType::DATA){
+        analyzer.add(frameHead);
+    }
 }
 
 void cleanup(int i) {
@@ -31,11 +34,11 @@ int main(int argc, char** argv) {
     }
 
     CHK(pcap_set_promisc(handle, 1));
-    auto canSetMonitorMode = static_cast<bool>(pcap_can_set_rfmon(handle));
-    if (not canSetMonitorMode) {
-        std::cerr << "Monitor mode is not supported on this wireless card. Cannot proceed." << std::endl;
-        return 1;
-    }
+//    auto canSetMonitorMode = static_cast<bool>(pcap_can_set_rfmon(handle));
+//    if (not canSetMonitorMode) {
+//        std::cerr << "Monitor mode is not supported on this wireless card. Cannot proceed." << std::endl;
+//        return 1;
+//    }
 
     /** Enable this to sniff only on the packets addressed to the interface provided as an argument.
      *  Use "on.sh" to sniff on all packets that reach the provided interface */

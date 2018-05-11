@@ -17,7 +17,7 @@ public:
 
     std::string toString() const {
         std::stringstream ss;
-        ss <<  std::hex  << std::setfill('0');
+        ss << std::hex << std::setfill('0');
         for (int i = 0; i < 5; ++i) {
             ss << std::setw(2) << static_cast<unsigned>(mac[i]) << ':';
         }
@@ -25,12 +25,18 @@ public:
         return ss.str();
     }
 
-    bool operator == (const MacAddress &rhs) const {
+    bool operator==(const MacAddress &rhs) const {
         return mac == rhs.mac;
     }
 
-    bool operator != (const MacAddress &rhs) const {
-        return not (rhs == *this);
+    bool operator!=(const MacAddress &rhs) const {
+        return not(rhs == *this);
+    }
+
+    bool isOnBlackList() const {
+        if (mac[0] == stp[0] && mac[1] == stp[1] && mac[2] == stp[2]) return true;
+        if (mac[0] == ipv4mcast[0] && mac[1] == ipv4mcast[1] && mac[2] == ipv4mcast[2]) return true;
+        return mac[0] == ipv6mcast[0] && mac[1] == ipv6mcast[1];
     }
 
 };
@@ -38,9 +44,9 @@ public:
 namespace std {
     template<>
     struct hash<MacAddress> {
-        inline std::size_t operator()(const MacAddress& macAddress) const {
+        inline std::size_t operator()(const MacAddress &macAddress) const {
             std::size_t hash = 0;
-            const auto& mac = macAddress.mac;
+            const auto &mac = macAddress.mac;
             hash_combine(hash, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
             return hash;
         }
