@@ -78,7 +78,7 @@ public:
 private:
 
     void addToContainer(const StationMac& source, const StationMac& destination, const std::function<void (Communication*)>& processor) {
-        if(!destination.isOnBlackList()) {
+        if (not destination.isOnBlackList()) {
             std::lock_guard<std::mutex> guard(communicationsMutex);
             auto[iterator, success] = communications.emplace(source, destination);
             auto writablePointer = const_cast<Communication *>(&(*iterator));

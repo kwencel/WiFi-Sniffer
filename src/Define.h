@@ -3,14 +3,14 @@
 
 #include <cstdint>
 #include <linux/types.h>
-#include <bitset>
 #include "Util.h"
 
-#define ETH_ALEN	6
+#define ETH_ALEN 6
 
-std::array<uint8_t, 3> ipv4mcast = {0x01,0x00,0x5e};
-std::array<uint8_t, 2> ipv6mcast = {0x33,0x33};
-std::array<uint8_t, 3> stp = {0x01,0x80,0xc2};
+// First bytes of destination field in specific packets
+std::array<uint8_t, 3> ipv4Multicast = {0x01, 0x00, 0x5e}; // IPv4 multicast packets
+std::array<uint8_t, 2> ipv6Multicast = {0x33, 0x33};       // IPv6 multicast packets
+std::array<uint8_t, 3> stp = {0x01, 0x80, 0xc2};           // Spanning Tree Protocol
 
 struct ieee80211_hdr {
     enum FrameType { MANAGEMENT, CONTROL, DATA, RESERVED };
@@ -31,8 +31,12 @@ struct ieee80211_hdr {
         return static_cast<bool>(extractBits(frameControl, 9));
     }
 
-    FrameType getFrameType(){
+    FrameType getFrameType() const {
         return static_cast<FrameType>(extractBits(frameControl,2,3) >> 2);
+    }
+
+    bool isDataFrame() const {
+        return getFrameType() == DATA;
     }
 
 };

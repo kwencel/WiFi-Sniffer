@@ -4,7 +4,7 @@
 #include <string>
 #include <iomanip>
 
-//extract bits counting from right
+/** Extracts specified bits counting from right **/
 template<typename T>
 T extractBits(T number, unsigned left, unsigned right) {
     unsigned r = 0;
@@ -14,12 +14,12 @@ T extractBits(T number, unsigned left, unsigned right) {
     return (T) (number & r);
 }
 
-template<typename T>
+template <typename T>
 T extractBits(T number, unsigned at) {
     return extractBits(number, at, at);
 }
 
-template<typename T>
+template <typename T>
 std::string toString(T item) {
     if constexpr (std::is_same<T, std::string>::value) {
         return item;
@@ -28,8 +28,8 @@ std::string toString(T item) {
     }
 }
 
-template<typename Container>
-inline std::string printContainer(const Container &container) {
+template <typename Container>
+inline std::string printContainer(const Container& container) {
     if (container.empty()) {
         return "{}";
     }
@@ -45,14 +45,14 @@ inline std::string printContainer(const Container &container) {
 }
 
 template<class Container, class T>
-auto contains(const Container &container, const T &x) -> decltype(container.find(x) != container.end()) {
+auto contains(const Container& container, const T& x) -> decltype(container.find(x) != container.end()) {
     return container.find(x) != container.end();
 }
 
-inline void hash_combine(std::size_t &seed) {}
+inline void hash_combine(std::size_t& seed) { }
 
-template<typename T, typename... Rest>
-inline void hash_combine(std::size_t &seed, const T &v, Rest... rest) {
+template <typename T, typename... Rest>
+inline void hash_combine(std::size_t& seed, const T& v, Rest... rest) {
     std::hash<T> hasher;
     seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     hash_combine(seed, rest...);
