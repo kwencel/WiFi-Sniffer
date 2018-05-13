@@ -7,6 +7,8 @@ Analizowane są tylko nagłówki ramek IEEE 802.11 w celu ustalenia nadawcy, odb
 Po uruchomieniu program wypisuje na standardowe wyjście informacje o tym, jakie stacje się ze sobą komunikują oraz listę stacji których ruch obsługiwał dany punkt dostępowy.
 Zliczana jest także liczba pakietów wysłanych pomiędzy każdą parą stacji.
 
+Pakiety o błędnej sumie kontrolnej są ignorowane.
+
 ## Wymagane zależności
 Kompilator zgodny z **C++17**.
 
@@ -44,4 +46,4 @@ Jest to niezbędne do poprawnego działania programu.
 
 **TrafficAnalyzer.h** - klasa odpowiedzialna za analizowanie odbieranych pakietów i generowanie statystyk.
 
-**Util.h** - zawiera funkcje pomocnicze dotyczące operacji na bitach, kontenerach oraz haszach.
+**Util.h** - zawiera funkcje pomocnicze dotyczące operacji na bitach, kontenerach i obliczania CRC-32 oraz haszy.

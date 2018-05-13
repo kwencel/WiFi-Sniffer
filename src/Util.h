@@ -4,6 +4,24 @@
 #include <string>
 #include <iomanip>
 
+//#define CRC32_POLYNOMIAL 0x82f63b78 // Normal order
+#define CRC32_POLYNOMIAL 0xedb88320 // CRC-32 (Ethernet, ZIP, etc.) polynomial in reversed bit order.
+
+uint32_t crc32(uint32_t crc, const unsigned char* buffer, size_t length) {
+    int k;
+    crc = ~crc;
+    while (length--) {
+        crc ^= *buffer++;
+        for (k = 0; k < 8; k++)
+            crc = crc & 1 ? (crc >> 1) ^ CRC32_POLYNOMIAL : crc >> 1;
+    }
+    return ~crc;
+}
+
+uint32_t crc32(const unsigned char* buffer, size_t length) {
+    return crc32(0, buffer, length);
+}
+
 /** Extracts specified bits counting from right **/
 template<typename T>
 T extractBits(T number, unsigned left, unsigned right) {

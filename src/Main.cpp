@@ -12,14 +12,24 @@ char errorBuffer[PCAP_ERRBUF_SIZE];
 pcap_t* handle;
 TrafficAnalyzer analyzer;
 
-void trap(u_char* user, const struct pcap_pkthdr* h, const u_char* bytes) {
+void trap(u_char* user, const struct pcap_pkthdr* pcapHeader, const u_char* bytes) {
     __le16 radiotapHeaderSize = bytes[2];
-    auto* frameHead = (ieee80211_hdr*) (bytes + radiotapHeaderSize);
+    const auto* frameHead = reinterpret_cast<const ieee80211_hdr*>(bytes + radiotapHeaderSize);
 
-    if (frameHead->isDataFrame()) {
+    int frameSize = pcapHeader->caplen - radiotapHeaderSize - FCS_SIZE;
+    if (frameSize < 0 or frameSize > pcapHeader->caplen - FCS_SIZE) {
+        // Packet is malformed
+        return;
+    }
+
+    uint32_t calculatedChecksum = crc32(reinterpret_cast<const unsigned char*>(frameHead), static_cast<size_t>(frameSize));
+    uint32_t packetChecksum = *((uint32_t*) (bytes + pcapHeader->caplen - FCS_SIZE));
+
+    if (frameHead->isDataFrame() and calculatedChecksum == packetChecksum) {
         analyzer.add(frameHead);
     }
 }
+
 
 void cleanup(int i) {
     pcap_close(handle);

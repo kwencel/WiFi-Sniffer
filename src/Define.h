@@ -6,6 +6,7 @@
 #include "Util.h"
 
 #define ETH_ALEN 6
+#define FCS_SIZE 4
 
 // First bytes of destination field in specific packets
 std::array<uint8_t, 3> ipv4Multicast = {0x01, 0x00, 0x5e}; // IPv4 multicast packets
