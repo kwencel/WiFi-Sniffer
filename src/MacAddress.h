@@ -16,7 +16,7 @@ public:
         std::copy(std::begin(address), std::end(address), std::begin(mac));
     }
 
-    std::string toString() const {
+    [[nodiscard]] std::string toString() const {
         std::stringstream ss;
         ss << std::hex << std::setfill('0');
         for (int i = 0; i < 5; ++i) {
@@ -34,7 +34,7 @@ public:
         return not (rhs == *this);
     }
 
-    bool isOnBlackList() const {
+    [[nodiscard]] bool isOnBlackList() const {
         return (std::equal(mac.begin(), mac.begin() + 3, stp.begin()) or
                (std::equal(mac.begin(), mac.begin() + 3, ipv4Multicast.begin())) or
                (std::equal(mac.begin(), mac.begin() + 2, ipv6Multicast.begin())));

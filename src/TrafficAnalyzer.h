@@ -34,7 +34,7 @@ public:
             }
         } else {
             if (not fromDS) {  // 1 0
-                addToContainer(header->addr2, header->addr3, [&](Communication* c) {             // Source, Destinatio
+                addToContainer(header->addr2, header->addr3, [&](Communication* c) {             // Source, Destination
                     c->addAp(header->addr1);                                                     // AP
                 });
             } else {           // 1 1

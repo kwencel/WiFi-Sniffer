@@ -24,19 +24,19 @@ struct ieee80211_hdr {
     __le16 seqCtrl;
     uint8_t addr4[ETH_ALEN];
 
-    bool isToDistributionSystem() const {
+    [[nodiscard]] bool isToDistributionSystem() const {
         return static_cast<bool>(extractBits(frameControl, 8));
     }
 
-    bool isFromDistributionSystem() const {
+    [[nodiscard]] bool isFromDistributionSystem() const {
         return static_cast<bool>(extractBits(frameControl, 9));
     }
 
-    FrameType getFrameType() const {
+    [[nodiscard]] FrameType getFrameType() const {
         return static_cast<FrameType>(extractBits(frameControl,2,3) >> 2);
     }
 
-    bool isDataFrame() const {
+    [[nodiscard]] bool isDataFrame() const {
         return getFrameType() == DATA;
     }
 
